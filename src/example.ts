@@ -3,41 +3,80 @@ import SolanaClient from './index';
 // Example usage of the Solana client
 async function example(): Promise<void> {
     // Create a client connected to devnet
-    const client = new SolanaClient('devnet');
+    const client = new SolanaClient('mainnet-beta');
+    console.log('Connected to network:', client.getUsdcMint());
 
     // Create a new wallet
-    const wallet = client.loadWalletFromSecretKey("444k7wD5rjhg3o3rAcBddWsC3Ng2CxZJwYcV8FyGqsawJEx13WdS6HzLwTqVLR5dLszKNzBq776M7azpHjc22wsa")
+    const wallet = client.loadWalletFromSecretKey()
     console.log('Created wallet:', wallet.publicKey);
-    console.log('Secret key:', wallet.secretKey);
+    console.log('Created wallet:', wallet.secretKey);
 
-    // Example custom logic function - checks if signature starts with 'A'
+    // Updated custom logic function to check for EVEN/ODD outcomes
     const customLogic = (signature: string): boolean => {
         console.log(`Checking signature: ${signature}`);
-        return true
+
+        // Check the first character of the signature
+        const firstChar = signature.charAt(signature.length - 1).toLowerCase();
+
+        // EVEN Outcomes (Winners)
+        const evenNumbers = ['0', '2', '4', '6', '8'];
+        const evenLetters = ['b', 'd', 'f', 'h', 'j', 'l', 'n', 'p', 'r', 't', 'v', 'x', 'z'];
+
+        // ODD Outcomes (Winners)
+        const oddNumbers = ['1', '3', '5', '7', '9'];
+        const oddLetters = ['a', 'c', 'e', 'g', 'i', 'k', 'm', 'o', 'q', 's', 'u', 'w', 'y'];
+
+        // Check if the first character is in any of the winner lists
+        const isEvenWinner = evenNumbers.includes(firstChar) || evenLetters.includes(firstChar);
+        const isOddWinner = oddNumbers.includes(firstChar) || oddLetters.includes(firstChar);
+
+        // Return true if it's a winner (either EVEN or ODD)
+        const isWinner = isOddWinner;
+
+        if (isWinner) {
+            console.log(`Signature ends with "${firstChar}" - WINNER! (${isEvenWinner ? 'EVEN' : 'ODD'})`);
+        } else {
+            console.log(`Signature ends with "${firstChar}" - Not a winner`);
+        }
+
+        return isWinner;
     };
 
     try {
-        // Create and sign a transaction (this is just an example, it would fail without funding)
-        const recipientAddress = '83astBRguLMdt2h5U1Tpdq5tjFoJ6noeGwaY3mDLVcri';
-        const txData = await client.createAndSignTransaction(wallet, recipientAddress, 100000);
+        // ----- SOL Transfer Example -----
+        const recipientAddress = 'Dghnvn5Mjpgi4JyGLebQ4fubVytvjTy59xkrYCLHaFTm';
 
-        console.log('Transaction created and signed');
-        console.log('Signature:', txData.signature);
+        // ----- USDC Transfer Example -----
+        console.log('\n--- USDC Transfer Example ---');
+        // Create and sign a USDC transaction (1.5 USDC)
+        let usdcTxData = await client.createAndSignTokenTransaction(wallet, recipientAddress, 10);
 
-        // Check signature with custom logic and submit if it passes
-        const txSignature = await client.checkSignatureAndSubmit(txData, customLogic);
+        if (customLogic(usdcTxData.signature)) {
+            console.log('USDC transaction created and signed');
+            console.log('Current network USDC mint:', client.getUsdcMint());
+            console.log('USDC Signature:', usdcTxData.signature);
 
-        if (txSignature) {
-            console.log('Transaction was submitted!');
-        } else {
-            console.log('Transaction was not submitted due to logic check');
+
+            const usdcTxSignature = await client.checkSignatureAndSubmit(usdcTxData);
+
+
+            if (usdcTxSignature) {
+                console.log('USDC transaction was submitted!');
+            } else {
+                console.log('USDC transaction was not submitted due to logic check');
+            }
+
+            console.log('USDC mint on devnet:', client.getUsdcMint());
+
+            // Try to get USDC balance
+            try {
+                const balance = await client.getTokenBalance(wallet.publicKey);
+                console.log(`USDC Balance on devnet: ${balance} USDC`);
+            } catch (error) {
+                console.log('Failed to get USDC balance, likely due to connection issues');
+            }
         }
 
-        // You can also switch networks
-        client.setNetwork('testnet');
-
-        // And load an existing wallet
-        // const loadedWallet = client.loadWalletFromSecretKey('your-secret-key-here');
 
     } catch (error) {
         console.error('Error in example:', error);
