@@ -7,7 +7,9 @@ async function example(): Promise<void> {
     console.log('Connected to network:', client.getUsdcMint());
 
     // Create a new wallet
-    const wallet = client.loadWalletFromSecretKey()
+    // TODO: change this if you want to load a wallet from a secret key
+    // const wallet = client.loadWalletFromSecretKey();
+    const wallet = client.createWallet();
     console.log('Created wallet:', wallet.publicKey);
     console.log('Created wallet:', wallet.secretKey);
 
